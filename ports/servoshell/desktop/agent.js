@@ -268,8 +268,14 @@
 
     // Main execution
     // Only run on top-level window to avoid duplicate output from iframes
-    if (window.self !== window.top) {
-        // This is an iframe, skip extraction
+    try {
+        if (window.self !== window.top) {
+            // This is an iframe, skip extraction
+            return;
+        }
+    } catch (e) {
+        // SecurityError can happen on cross-origin frames accessing window.top
+        // If we can't check, we assume we are an iframe and exit to be safe
         return;
     }
 
