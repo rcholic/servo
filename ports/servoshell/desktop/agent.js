@@ -287,6 +287,13 @@
             userAgent: navigator.userAgent,
         };
 
+        // Skip output if tree is null or empty (ghost load / initialization state)
+        // This eliminates the first LoadComplete event with empty content
+        if (!semanticTree.tree ||
+            (semanticTree.tree.children && semanticTree.tree.children.length === 0)) {
+            return; // Silent return - wait for real content
+        }
+
         // Output as JSON to stdout
         console.log(JSON.stringify(semanticTree, null, 2));
     } catch (error) {
