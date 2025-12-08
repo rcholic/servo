@@ -267,6 +267,12 @@
     }
 
     // Main execution
+    // Only run on top-level window to avoid duplicate output from iframes
+    if (window.self !== window.top) {
+        // This is an iframe, skip extraction
+        return;
+    }
+
     try {
         const semanticTree = {
             metadata: extractMetadata(),
