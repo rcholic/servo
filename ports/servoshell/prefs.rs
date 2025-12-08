@@ -86,6 +86,8 @@ pub(crate) struct ServoShellPreferences {
     pub webdriver_port: Cell<Option<u16>>,
     /// Whether the CLI option to enable experimental prefs was present at startup.
     pub experimental_preferences_enabled: bool,
+    /// Whether to run in Sentience mode (extract semantic accessibility tree as JSON).
+    pub sentience: bool,
     /// Log filter given in the `log_filter` spec as a String, if any.
     /// If a filter is passed, the logger should adjust accordingly.
     #[cfg(target_env = "ohos")]
@@ -113,11 +115,12 @@ impl Default for ServoShellPreferences {
             exit_after_stable_image: false,
             userscripts_directory: None,
             webdriver_port: Cell::new(None),
+            experimental_preferences_enabled: false,
+            sentience: false,
             #[cfg(target_env = "ohos")]
             log_filter: None,
             #[cfg(target_env = "ohos")]
             log_to_file: false,
-            experimental_preferences_enabled: false,
         }
     }
 }
@@ -433,6 +436,10 @@ struct CmdArgs {
     #[bpaf(short('z'), long)]
     headless: bool,
 
+    /// Sentience mode: Extract semantic accessibility tree as JSON and output to stdout.
+    #[bpaf(long)]
+    sentience: bool,
+
     ///
     ///  Whether or not to completely ignore certificate errors.
     #[bpaf(long)]
@@ -670,6 +677,7 @@ pub(crate) fn parse_command_line_arguments(args: Vec<String>) -> ArgumentParsing
         device_pixel_ratio_override: cmd_args.device_pixel_ratio,
         clean_shutdown: cmd_args.clean_shutdown,
         headless: cmd_args.headless,
+        sentience: cmd_args.sentience,
         tracing_filter: cmd_args.tracing_filter,
         initial_window_size: cmd_args.window_size.unwrap_or(default_window_size),
         screen_size_override: cmd_args.screen_size_override,

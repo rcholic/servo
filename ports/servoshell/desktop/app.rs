@@ -20,6 +20,7 @@ use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoopProxy};
 use winit::window::WindowId;
 
+use super::agent::AGENT_SCRIPT;
 use super::event_loop::AppEvent;
 use super::{headed_window, headless_window};
 use crate::desktop::event_loop::ServoShellEventLoop;
@@ -83,6 +84,14 @@ impl App {
             .expect("Loading userscripts failed")
         {
             user_content_manager.add_script(script);
+        }
+
+        // Inject Sentience agent script if in sentience mode
+        if self.servoshell_preferences.sentience {
+            user_content_manager.add_script(UserScript {
+                script: AGENT_SCRIPT.to_string(),
+                source_file: None,
+            });
         }
 
         let mut protocol_registry = ProtocolRegistry::default();
