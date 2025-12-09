@@ -267,36 +267,54 @@
     }
 
     // Main execution
+    // Debug: Prove agent script started
+    console.log("DEBUG_JS: Sentience agent script started!");
+
     // Only run on top-level window to avoid duplicate output from iframes
     try {
+        console.log("DEBUG_JS: Checking frame status. Top?", window.self === window.top);
+
         if (window.self !== window.top) {
             // This is an iframe, skip extraction
+            console.log("DEBUG_JS: I am an iframe. Exiting.");
             return;
         }
     } catch (e) {
         // SecurityError can happen on cross-origin frames accessing window.top
         // If we can't check, we assume we are an iframe and exit to be safe
+        console.log("DEBUG_JS: Frame check error:", e.message);
         return;
     }
 
     try {
+        console.log("DEBUG_JS: Building semantic tree from document.body");
+        const tree = buildSemanticTree(document.body);
+        console.log("DEBUG_JS: Tree built. Is null?", tree === null);
+        if (tree && tree.children) {
+            console.log("DEBUG_JS: Tree has", tree.children.length, "children");
+        }
+
         const semanticTree = {
             metadata: extractMetadata(),
-            tree: buildSemanticTree(document.body),
+            tree: tree,
             timestamp: new Date().toISOString(),
             userAgent: navigator.userAgent,
         };
 
         // Skip output if tree is null or empty (ghost load / initialization state)
         // This eliminates the first LoadComplete event with empty content
-        if (!semanticTree.tree ||
-            (semanticTree.tree.children && semanticTree.tree.children.length === 0)) {
-            return; // Silent return - wait for real content
-        }
+        // TEMPORARILY DISABLED for debugging
+        //if (!semanticTree.tree ||
+        //    (semanticTree.tree.children && semanticTree.tree.children.length === 0)) {
+        //    console.log("DEBUG_JS: Tree empty, would normally skip but outputting anyway for debug");
+        //    // return; // Silent return - wait for real content
+        //}
 
+        console.log("DEBUG_JS: Outputting JSON to stdout");
         // Output as JSON to stdout
         console.log(JSON.stringify(semanticTree, null, 2));
     } catch (error) {
+        console.log("DEBUG_JS: Error occurred:", error.message);
         // Output error as JSON
         console.error(JSON.stringify({
             error: true,
