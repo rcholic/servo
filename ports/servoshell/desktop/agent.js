@@ -1,34 +1,47 @@
-const targetUrl = process.argv[2];
+// agent.js - Browser Context Version (No Node.js dependencies)
 
-// Helper to print and signal exit
-function outputAndExit(source) {
-    try {
-        const data = {
-            url: targetUrl,
-            title: document.title || "No Title",
-            // Grab text, collapse whitespace, limit length
-            content: (document.body.innerText || "").replace(/\s+/g, ' ').trim().substring(0, 10000),
-            status: "success",
-            source: source,
-            timestamp: new Date().toISOString()
-        };
-        // This is the line the Rust reader is waiting for
-        console.log(JSON.stringify(data));
-    } catch (e) {
-        console.log(JSON.stringify({ error: e.message }));
+(function() {
+    let hasExecuted = false;
+
+    function outputAndExit(triggerSource) {
+        if (hasExecuted) return;
+        hasExecuted = true;
+
+        try {
+            const data = {
+                url: window.location.href, // Get actual current URL
+                title: document.title || "No Title",
+                // Grab text, collapse whitespace, limit to 10k chars
+                content: (document.body ? document.body.innerText : "").replace(/\s+/g, ' ').trim().substring(0, 10000),
+                status: "success",
+                source: triggerSource,
+                timestamp: new Date().toISOString()
+            };
+            // This goes to stdout, which Rust captures
+            console.log(JSON.stringify(data));
+        } catch (e) {
+            console.log(JSON.stringify({ error: e.message, source: "agent_error" }));
+        }
     }
-    // We rely on the Rust API server to kill us, but we stop processing.
-}
 
-// 1. FAST PATH: As soon as the DOM structure is ready (ignore images/css/ads)
-document.addEventListener('DOMContentLoaded', () => {
-    outputAndExit("DOMContentLoaded");
-});
+    // 1. Immediate Check: If the page is already parsed (interactive) or done (complete)
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+        outputAndExit("Immediate_ReadyState");
+    } else {
+        // 2. Event Listener: Wait for the DOM to be constructed
+        document.addEventListener('DOMContentLoaded', () => {
+            outputAndExit("Event_DOMContentLoaded");
+        });
 
-// 2. BACKUP: If DOMContentLoaded fails or hangs, force output after 4s
-setTimeout(() => {
-    outputAndExit("ForceTimeout_4s");
-}, 4000);
+        // 3. Fallback: Also listen for full load just in case
+        window.addEventListener('load', () => {
+            outputAndExit("Event_Load");
+        });
+    }
 
-// Start the navigation
-window.location.href = targetUrl;
+    // 4. HARD TIMEOUT: If the page is stuck (ads/scripts), force output after 3 seconds
+    setTimeout(() => {
+        outputAndExit("ForceTimeout_3s");
+    }, 3000);
+
+})();
